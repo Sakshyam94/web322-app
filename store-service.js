@@ -68,9 +68,79 @@ getCategories=function(){
         }
         });
 }
+
+addItem=function(itemData)
+{
+    return new Promise((resolve,reject)=>{
+        if(itemData.published===undefined){
+            itemData.published=false;
+        }else{
+            itemData.published=true;
+        }
+
+        itemData.id=itemsA.length+1;
+
+        itemsA.push(itemData);
+
+        resolve(itemData);
+    });
+}
+
+getItemsByCategory=function(category){
+    return new Promise((resolve, reject) => {
+        if(itemsA.length===0)
+        {
+            reject("No items found");
+
+        }
+        let fitems=itemsA.filter((item)=>item.caregory==category);
+        if (fitems.length===0){
+            reject("No results returned");
+        }else{
+            resolve(fitems);
+        }
+    });
+}
+
+getItemsByMinDate=function(minDateStr){
+
+    return new Promise((resolve, reject) => {
+        if(itemsA.length===0)
+        {
+            reject("No items found");
+
+        }
+        let fitems=itemsA.filter((item)=>new Date(item.postDate)>=new Date(minDateStr));
+        if (fitems.length===0){
+            reject("No results returned");
+        }else{
+            resolve(fitems);
+        }
+    });
+}
+
+getItemById=function(id){
+    return new Promise((resolve, reject) => {
+        if(itemsA.length===0)
+        {
+            reject("No items found");
+
+        }
+        let fitem=itemsA.filter((item)=>item.id==id);
+        if (fitem){
+            resolve(fitem);
+        }else{
+            reject("No result returned");
+        }
+    });
+}
 module.exports={
     initialize,
     getAllitems,
     getPublishedItems,
-    getCategories
+    getCategories,
+    addItem,
+    getItemById,
+    getItemsByCategory,
+    getItemsByMinDate
 }
