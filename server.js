@@ -6,9 +6,9 @@
 * 
 *  Name: Sakyam Timilsina Student ID: 155496219 Date: June 16th 2023
 *
-*  Cyclic Web App URL: ________________________________________________________
+*  Cyclic Web App URL: https://lazy-pink-lion-hat.cyclic.app/about
 * 
-*  GitHub Repository URL: ______________________________________________________
+*  GitHub Repository URL: https://github.com/Sakshyam94/web322-app
 *
 ********************************************************************************/ 
 
