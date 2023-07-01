@@ -79,7 +79,7 @@ addItem=function(itemData)
         }
 
         itemData.id=itemsA.length+1;
-
+        itemData.postDate = new Date().toISOString().split('T')[0]; 
         itemsA.push(itemData);
 
         resolve(itemData);
@@ -134,6 +134,22 @@ getItemById=function(id){
         }
     });
 }
+
+getPublishedItemsByCategory=function(category){
+    return new Promise((resolve, reject) => {
+        if (itemsA.length === 0) {
+          reject("No items found");
+        }
+    
+        let fitems = itemsA.filter((item) => item.category === category && item.published);
+        if (fitems.length === 0) {
+          reject("No results returned");
+        } else {
+          resolve(fitems);
+        }
+      });
+}
+
 module.exports={
     initialize,
     getAllitems,
@@ -142,5 +158,6 @@ module.exports={
     addItem,
     getItemById,
     getItemsByCategory,
-    getItemsByMinDate
+    getItemsByMinDate,
+    getPublishedItemsByCategory
 }
