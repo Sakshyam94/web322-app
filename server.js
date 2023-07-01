@@ -4,7 +4,7 @@
 *  of this assignment has been copied manually or electronically from any other source 
 *  (including 3rd party web sites) or distributed to other students.
 * 
-*  Name: Sakyam Timilsina Student ID: 155496219 Date: June 30th 2023
+*  Name: Sakshyam Timilsina Student ID: 155496219 Date: June 30th 2023
 *
 *  Cyclic Web App URL: https://lazy-pink-lion-hat.cyclic.app/Shop
 * 
