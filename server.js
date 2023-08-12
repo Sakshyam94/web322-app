@@ -1,61 +1,31 @@
 /*********************************************************************************
-*  WEB322 – Assignment 05
+*  WEB322 – Assignment 06
 *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part of this
 *  assignment has been copied manually or electronically from any other source (including web sites) or 
 *  distributed to other students.
 * 
-*  Name: Sakshyam Timilsina Student ID: 155496219 Date: 21st July 2023
+*  Name: Sakshyam Timilsina Student ID: 155496219 Date: 11th August 2023
 *
 *  Cyclic Web App URL: https://lazy-pink-lion-hat.cyclic.app/about
 *
 *  GitHub Repository URL: https://github.com/Sakshyam94/web322-app
 *
-********************************************************************************/ 
-
+********************************************************************************/
+const HTTP_PORT = process.env.PORT || 8080;
 const express = require("express");
-const itemData = require("./store-service");
-const path = require("path");
-
-const multer = require("multer");
-const cloudinary = require("cloudinary").v2;
-const streamifier = require("streamifier");
-
-const exphbs = require("express-handlebars");
-const { Console } = require("console");
-
-
-cloudinary.config({
-  cloud_name: "drc17mjcj",
-  api_key: "157631916538174",
-  api_secret: "6WbPI-Hc9_HbgObBts_6WF6uKA",
-  secure: true,
-});
-
-
-const upload = multer(); 
-
 const app = express();
 
-const HTTP_PORT = process.env.PORT || 8080;
+const multer = require("multer");
+const upload = multer();
 
-app.use(express.static("public"));
+const cloudinary = require("cloudinary").v2;
+const streamifier = require("streamifier");
+const clientSessions = require("client-sessions");
 
-app.use(express.urlencoded({extended:true}));
+var itemData = require("./store-service");
+var authData = require("./auth-service");
 
-app.use(function (req, res, next) {
-  let route = req.path.substring(1);
-
-  app.locals.activeRoute =
-    "/" +
-    (isNaN(route.split("/")[1])
-      ? route.replace(/\/(?!.*)/, "")
-      : route.replace(/\/(.*)/, ""));
-
-  app.locals.viewingCategory = req.query.category;
-
-  next();
-});
-
+const exphbs = require("express-handlebars");
 app.engine(
   ".hbs",
   exphbs.engine({
@@ -65,11 +35,11 @@ app.engine(
         return (
           '<li class="nav-item"><a ' +
           (url == app.locals.activeRoute
-            ? ' class="nav-link active" '
-            : ' class="nav-link" ') +
-          ' href="' +
+            ? ' class = "nav-item active" '
+            : ' class = "nav-link" ') +
+          ' href =" ' +
           url +
-          '">' +
+          '"> ' +
           options.fn(this) +
           "</a></li>"
         );
@@ -83,20 +53,64 @@ app.engine(
           return options.fn(this);
         }
       },
-      formatDate: function(dateObj){
+      formatDate: function (dateObj) {
         let year = dateObj.getFullYear();
         let month = (dateObj.getMonth() + 1).toString();
         let day = dateObj.getDate().toString();
-        return `${year}-${month.padStart(2, '0')}-${day.padStart(2,'0')}`;
-    }    
+        return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      },
     },
   })
 );
 
 app.set("view engine", ".hbs");
 
+cloudinary.config({
+  cloud_name: "drc17mjcj",
+  api_key: "157631916538174",
+  api_secret: "6WbPI-Hc9_HbgObBts_6WF6uKA",
+  secure: true,
+});
+
+app.use(function (req, res, next) {
+  let route = req.path.substring(1);
+  app.locals.activeRoute =
+    "/" +
+    (isNaN(route.split("/")[1])
+      ? route.replace(/\/(?!.*)/, "")
+      : route.replace(/\/(.*)/, ""));
+  app.locals.viewingCategory = req.query.category;
+  next();
+});
+
+
+app.use(express.static("public"));
+app.use(express.urlencoded({ extended: true }));
+
+app.use(
+  clientSessions({
+    cookieName: "session",
+    secret: "HaolinYang112654223",
+    duration: 10 * 60 * 1000,
+    activeDuration: 10 * 60 * 1000,
+  })
+);
+
+app.use(function (req, res, next) {
+  res.locals.session = req.session;
+  next();
+});
+
+function ensureLogin(req, res, next) {
+  if (!req.session.user) {
+    res.redirect("/login");
+  } else {
+    next();
+  }
+}
+
 app.get("/", (req, res) => {
-  res.redirect("/about");
+  res.redirect("/shop");
 });
 
 app.get("/about", (req, res) => {
@@ -106,15 +120,15 @@ app.get("/about", (req, res) => {
 app.get("/shop", async (req, res) => {
 
   let viewData = {};
-
   try {
 
     let items = [];
 
     if (req.query.category) {
 
-      console.log('categories');
-      items = await itemData.getPublishedItemsByCategory(req.query.category);
+      items = await itemData.getPublishedItemsByCategory(
+        req.query.category
+      );
     } else {
 
       items = await itemData.getPublishedItems();
@@ -126,14 +140,52 @@ app.get("/shop", async (req, res) => {
 
     viewData.items = items;
     viewData.item = item;
-
-  } 
-  catch (err) {
+  } catch (err) {
     viewData.message = "no results";
   }
 
   try {
 
+    let categories = await itemData.getCategories();
+
+
+    viewData.categories = categories;
+  } catch (err) {
+    viewData.categoriesMessage = "no results";
+  }
+
+  res.render("shop", { data: viewData });
+});
+
+app.get("/shop/:id", async (req, res) => {
+  let viewData = {};
+
+  try {
+
+    let items = [];
+
+    if (req.query.category) {
+
+      items = await itemData.getPublishedItemsByCategory(
+        req.query.category
+      );
+    } else {
+
+      items = await itemData.getPublishedItems();
+    }
+    items.sort((a, b) => new Date(b.postDate) - new Date(a.postDate));
+    viewData.items = items;
+  } catch (err) {
+    viewData.message = "no results";
+  }
+
+  try {
+    viewData.item = await itemData.getItemById(req.params.id);
+  } catch (err) {
+    viewData.message = "no results";
+  }
+
+  try {
     let categories = await itemData.getCategories();
 
     viewData.categories = categories;
@@ -144,110 +196,205 @@ app.get("/shop", async (req, res) => {
   res.render("shop", { data: viewData });
 });
 
-app.get("/items", (req, res) => {
-  let queryPromise = null;
 
-  if (req.query.category) {
-    queryPromise = itemData.getItemsByCategory(req.query.category);
-  } else if (req.query.minDate) {
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+app.post("/login", (req, res) => {
+  req.body.userAgent = req.get("User-Agent");
 
-    queryPromise = itemData.getItemsByMinDate(req.query.minDate);
-  } else {
-
-    queryPromise = itemData.getAllItems();
-  }
-
-  queryPromise
-    .then((data) => {
-      if (data.length > 0) {
-        res.render("items", { items: data });
-      } else {
-        res.render("items", { message: "no results" });
-      }
+  authData
+    .checkUser(req.body)
+    .then((user) => {
+      req.session.user = {
+        username: user.username,
+        email: user.email,
+        loginHistory: user.loginHistory,
+      };
+      console.log(user)
+      res.redirect("/items");
     })
     .catch((err) => {
+      res.render("login", {
+        errorMessage: err,
+        userName: req.body.userName,
+      });
+    });
+});
+
+app.get("/register", (req, res) => {
+  res.render("register");
+});
+app.post("/register", (req, res) => {
+  const userData = {
+    userName: req.body.userName,
+    email: req.body.email,
+    password: req.body.password,
+    password2: req.body.password2,
+    userAgent: req.headers["user-agent"],
+  };
+
+  authData
+    .registerUser(userData)
+    .then(() => {
+      res.render("register", { successMessage: "User created" });
+    })
+    .catch((err) => {
+      res.render("register", {
+        errorMessage: err,
+        userName: req.body.userName,
+      });
+    });
+});
+
+app.get("/logout", (req, res) => {
+  req.session.reset();
+  res.redirect("/");
+});
+
+app.get("/userHistory", ensureLogin, (req, res) => {
+  res.render("userHistory");
+});
+
+app.get("/items", ensureLogin, (req, res) => {
+  const category = req.query.category;
+  const minDate = req.query.minDate;
+
+  if (category) {
+    itemData
+      .getItemsByCategory(category)
+      .then((data) => {
+        if (data.length > 0) {
+          res.render("items", { items: data });
+        } else {
+          res.render("items", { message: "no results" });
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to get items of selected category:", error);
+        res.render("items", { message: "no results" });
+      });
+  } else if (minDate) {
+    itemData
+      .getItemsByMinDate(minDate)
+      .then((data) => {
+        if (data.length > 0) {
+          res.render("items", { items: data });
+        } else {
+          res.render("items", { message: "no results" });
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to get items of selected minDate:", error);
+        res.render("items", { message: "no results" });
+      });
+  } else {
+    itemData
+      .getAllItems()
+      .then((data) => {
+        if (data.length > 0) {
+          res.render("items", { items: data });
+        } else {
+          res.render("items", { message: "no results" });
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to get categories:", error);
+        res.render("items", { message: "no results" });
+      });
+  }
+});
+
+app.get("/items/add", ensureLogin, (req, res) => {
+  itemData
+    .getCategories()
+    .then((categories) => {
+      res.render("addItem", { categories });
+    })
+    .catch((error) => {
+      console.error("Failed to get categories:", error);
+      res.render("addPost", { categories: [] });
+    });
+});
+
+app.post(
+  "/items/add",
+  ensureLogin,
+  upload.single("featureImage"),
+  (req, res) => {
+
+    if (req.file) {
+      let streamUpload = (req) => {
+        return new Promise((resolve, reject) => {
+          let stream = cloudinary.uploader.upload_stream((error, result) => {
+            if (result) {
+              resolve(result);
+            } else {
+              reject(error);
+            }
+          });
+
+          streamifier.createReadStream(req.file.buffer).pipe(stream);
+        });
+      };
+      async function upload(req) {
+        let result = await streamUpload(req);
+        console.log(result);
+        return result;
+      }
+      upload(req).then((uploaded) => {
+        processItem(uploaded.url);
+      });
+    } else {
+      processItem("");
+    }
+
+    function processItem(imageUrl) {
+      req.body.featureImage = imageUrl;
+
+      itemData
+        .addItem(req.body)
+        .then(() => {
+          res.redirect("/items");
+        })
+        .catch((err) => {
+          console.error("Failed to add item:", err);
+          res.render("items", { message: "no results" });
+        });
+    }
+  }
+);
+
+app.get("/item/:id", ensureLogin, (req, res) => {
+  const itemId = req.params.id;
+  itemData
+    .getItemById(itemId)
+    .then((data) => {
+      if (data) {
+        res.render("items", { items: data });
+      } else {
+        res.render("items", { message: "Item not found" });
+      }
+    })
+    .catch((error) => {
+      console.error("Failed to get item of this id:", error);
       res.render("items", { message: "no results" });
     });
 });
 
-
-app.get("/items/add", (req, res) => {
-  itemData.getCategories()
-  .then((categories) => {
-    res.render("addItem", { categories:data });
-  })
-  .catch((err) => {
-    res.render("addItem", { categories: [] });
-  });
-});
-
-app.post("/items/add", upload.single("featureImage"), (req, res) => {
-  if (req.file) {
-    let streamUpload = (req) => {
-      return new Promise((resolve, reject) => {
-        let stream = cloudinary.uploader.upload_stream((error, result) => {
-          if (result) {
-            resolve(result);
-          } else {
-            reject(error);
-          }
-        });
-
-        streamifier.createReadStream(req.file.buffer).pipe(stream);
-      });
-    };
-
-    async function upload(req) {
-      let result = await streamUpload(req);
-
-      console.log(result);
-
-      return result;
-    }
-
-    upload(req).then((uploaded) => {
-      processItem(uploaded.url);
-    });
-  } else {
-    processItem("");
-  }
-
-  function processItem(imageUrl) {
-    req.body.featureImage = imageUrl;
-    itemData
-      .addItem(req.body)
-      .then((post) => {
-        res.redirect("/items");
-      })
-      .catch((err) => {
-        res.status(500).send(err);
-      });
-  }
-});
-app.get("/item/:id", (req, res) => {
-  itemData
-    .getItemById(req.params.id)
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((err) => {
-      res.json({ message: err });
-    });
-});
-
-app.get("/items/delete/:id", (req, res) => {
-  const itemId = parseInt(req.params.id);
+app.get("/items/delete/:id", ensureLogin, (req, res) => {
+  let itemId = req.params.id;
   itemData
     .deletePostById(itemId)
     .then(() => {
       res.redirect("/items");
     })
     .catch((err) => {
-      res.status(500).send("Unable to Remove Item / Item not found");
+      res.status(500).send("Unable to Remove Category / Category not found");
     });
 });
 
-app.get("/categories", (req, res) => {
+app.get("/categories", ensureLogin, (req, res) => {
   itemData
     .getCategories()
     .then((data) => {
@@ -257,33 +404,34 @@ app.get("/categories", (req, res) => {
         res.render("categories", { message: "no results" });
       }
     })
-    .catch((err) => {
+    .catch((error) => {
+      console.error("Failed to get categories:", error);
       res.render("categories", { message: "no results" });
     });
 });
 
-app.get("/categories/add", (req, res) => {
+app.get("/categories/add", ensureLogin, (req, res) => {
   res.render("addCategory");
 });
 
-app.post("/categories/add", (req, res) => {
+app.post("/categories/add", ensureLogin, (req, res) => {
+  let formData = req.body;
 
   itemData
-    .addCategory(req.body)
+    .addCategory(formData)
     .then(() => {
-
       res.redirect("/categories");
     })
     .catch((err) => {
-
-      res.status(500).send(err);
+      console.error("Failed to add category:", err);
+      res.redirect("/categories");
     });
 });
 
-app.get("/categories/delete/:id", (req, res) => {
-  const categoryId = parseInt(req.params.id);
+app.get("/categories/delete/:id", ensureLogin, (req, res) => {
+  let catId = req.params.id;
   itemData
-    .deleteCategoryById(categoryId)
+    .deleteCategoryById(catId)
     .then(() => {
       res.redirect("/categories");
     })
@@ -292,55 +440,15 @@ app.get("/categories/delete/:id", (req, res) => {
     });
 });
 
-app.get('/shop/:id', async (req, res) => {
-
-  let viewData = {};
-
-  try{
-      let items = [];
-      if(req.query.category){
-
-          items = await itemData.getPublishedItemsByCategory(req.query.category);
-      }else{
-          items = await itemData.getPublishedItems();
-      }
-
-      items.sort((a,b) => new Date(b.postDate) - new Date(a.postDate));
-
-      viewData.items = items;
-
-  }catch(err){
-      viewData.message = "no results";
-  }
-
-  try{
-
-      viewData.item = await itemData.getItemById(req.params.id);
-  }catch(err){
-      viewData.message = "no results"; 
-  }
-
-  try{
-      let categories = await itemData.getCategories();
-
-      viewData.categories = categories;
-  }catch(err){
-      viewData.categoriesMessage = "no results"
-  }
-  res.render("shop", {data: viewData})
+app.get("*", (req, res) => {
+  res.status(404).render("404");
 });
 
-app.use((req, res) => {
-  res.status(404).render("404");
-})
-
-itemData
-  .initialize()
+itemData.initialize()
+  .then(authData.initialize)
   .then(() => {
     app.listen(HTTP_PORT, () => {
-      console.log("server listening on: " + HTTP_PORT);
+      console.log(`Express http server listening on port ${HTTP_PORT}`);
     });
   })
-  .catch((err) => {
-    console.log(err);
-  });
+  .catch((err) => "Server failed to init from: " + err);

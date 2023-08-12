@@ -28,16 +28,49 @@
            
 
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav">
-                        {{#navLink "/Shop"}}Shop{{/navLink}}
-                        {{#navLink "/About"}}About{{/navLink}}
-                        {{#navLink "/Items"}}Items{{/navLink}}
-                        {{#navLink "/Categories"}}Categories{{/navLink}}
-                    </ul>
+                    <ul class="nav navbar-nav navbar-left">
+            {{#navLink "/Shop"}}Shop{{/navLink}}
+            {{#navLink "/About"}}About{{/navLink}}
+          </ul>
 
-                    <!-- /.navbar-collapse -->
-                </div>
-                <!-- /.container-fluid -->
+          {{#if session.user}}
+            <div>
+              <ul class="navbar-right nav navbar-nav">
+                {{#navLink "/items"}}Items{{/navLink}}
+                {{#navLink "/categories"}}Categories{{/navLink}}
+              </ul>
+            </div>
+            <div class="dropdown">
+              <button
+                class="btn btn-secondary dropdown-toggle"
+                type="button"
+                id="userMenu"
+                data-bs-toggle="dropdown"
+              >
+                <span
+                  class="glyphicon glyphicon-user"
+                ></span>&nbsp;&nbsp;{{session.user.username}}&nbsp;&nbsp;<span
+                  class="caret"
+                ></span>
+
+              </button>
+              <ul class="dropdown-menu">
+                <li class="dropdown-item"><a href="/userHistory">User History</a></li>
+                <li class="dropdown-item"><a href="/logout">Log Out</a></li>
+              </ul>
+            </div>
+
+          {{else}}
+            <form class="navbar-form navbar-right">
+              <a href="/register" class="btn btn-success"><span
+                  class="glyphicon glyphicon-cog"
+                ></span>&nbsp;&nbsp;Register</a>
+              <a href="/login" class="btn btn-primary"><span
+                  class="glyphicon glyphicon-chevron-right"
+                ></span>&nbsp;&nbsp;Log In</a>
+            </form>
+
+            {{/if}}
 
             
         </div>
