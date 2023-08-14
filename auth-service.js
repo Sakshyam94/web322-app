@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const bcrypt = require('bcryptjs');
 var Schema = mongoose.Schema;
 
-mongoose.connect("mongodb+srv://sakshamtimalsina94:Se6az3yb5LadwDMx@senecaweb.fmtlips.mongodb.net/");//
+mongoose.connect("mongodb+srv://sakshamtimalsina94:WMLfafqGhk81mLVM@senecaweb.fmtlips.mongodb.net/");//
 
 var userSchema = new Schema({
     userName: { type: String, unique: true },
@@ -20,7 +20,7 @@ var userSchema = new Schema({
 module.exports.initialize = function () {
     return new Promise(function (resolve, reject) {
 
-        let db = mongoose.createConnection("mongodb+srv://sakshamtimalsina94:Se6az3yb5LadwDMx@senecaweb.fmtlips.mongodb.net/");
+        let db = mongoose.createConnection("mongodb+srv://sakshamtimalsina94:WMLfafqGhk81mLVM@senecaweb.fmtlips.mongodb.net/");
 
         db.on('error', (err)=>{
             reject(err);
