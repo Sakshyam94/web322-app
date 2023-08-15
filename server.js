@@ -6,7 +6,7 @@
 * 
 *  Name: Sakshyam Timilsina Student ID: 155496219 Date: 14th August 2023
 *
-*  Cyclic Web App URL: https://lazy-pink-lion-hat.cyclic.app/about
+*  Cyclic Web App URL: https://lazy-pink-lion-hat.cyclic.app
 *
 *  GitHub Repository URL: https://github.com/Sakshyam94/web322-app
 *
@@ -90,7 +90,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   clientSessions({
     cookieName: "session",
-    secret: "HaolinYang112654223",
+    secret: "sakshyam123",
     duration: 10 * 60 * 1000,
     activeDuration: 10 * 60 * 1000,
   })
